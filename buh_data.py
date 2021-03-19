@@ -13,7 +13,7 @@ def plot_chars(data, chars, normalize=True, figsize=(20, 6), precision=3):
         ax = sns.barplot(x=data.drop('year', axis=1).columns,\
                                                  y=result.T[idx])
         annotate_bars(ax, precision=precision)
-    plt.grid(True)
+        plt.grid(True)
     plt.title(f'Number of occurences of "{char}"')
     plt.xticks(rotation=0)
     
