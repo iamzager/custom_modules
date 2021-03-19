@@ -1,8 +1,6 @@
 import numpy as np
-#from my_scripts import annotate_bars
 import seaborn as sns
 import matplotlib.pyplot as plt
-#comment
 
 def plot_chars(data, chars, normalize=True, figsize=(20, 6), precision=3):
     result = np.array([])
