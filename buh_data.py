@@ -5,17 +5,20 @@ from custom_modules.plotting import annotate_bars
 
 def plot_chars(data, chars, normalize=True, figsize=(20, 6), precision=3):
     result = np.array([])
-    for col in data.drop('year', axis=1):
-        result = np.r_[result, contains_chars(data[col].dropna(), chars, normalize=normalize)]
+    if 'year' in data.columns:
+        df = data.drop('year', axis=1)
+    else:
+        df = data
+    for col in df:
+        result = np.r_[result, contains_chars(df[col].dropna(), chars, normalize=normalize)]
     result = result.reshape(data.drop('year', axis=1).columns.shape[0], len(chars))
     for idx, char in enumerate(chars):
         plt.figure(figsize=figsize)
-        ax = sns.barplot(x=data.drop('year', axis=1).columns,\
-                                                 y=result.T[idx])
+        ax = sns.barplot(x=df.columns, y=result.T[idx])
         annotate_bars(ax, precision=precision)
         plt.grid(True)
-    plt.title(f'Number of occurences of "{char}"')
-    plt.xticks(rotation=0)
+        plt.title(f'Number of occurences of "{char}"')
+        plt.xticks(rotation=0)
     
 
 def contains_chars(data, chars, normalize=False):
