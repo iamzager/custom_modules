@@ -1,6 +1,7 @@
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from custom_modules.plotting import annotate_bars
 
 def plot_chars(data, chars, normalize=True, figsize=(20, 6), precision=3):
     result = np.array([])
@@ -11,10 +12,11 @@ def plot_chars(data, chars, normalize=True, figsize=(20, 6), precision=3):
         plt.figure(figsize=figsize)
         ax = sns.barplot(x=data.drop('year', axis=1).columns,\
                                                  y=result.T[idx])
+        annotate_bars(ax, precision=precision)
     plt.grid(True)
     plt.title(f'Number of occurences of "{char}"')
     plt.xticks(rotation=0)
-    #annotate_bars(ax, precision=precision)
+    
 
 def contains_chars(data, chars, normalize=False):
     result = []
