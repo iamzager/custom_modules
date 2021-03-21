@@ -5,13 +5,15 @@ from custom_modules.plotting import annotate_bars
 
 def plot_chars(data, chars, normalize=True, figsize=(20, 6), precision=3):
     result = np.array([])
-    if 'year' in data.columns:
-        df = data.drop('year', axis=1)
-    else:
-        df = data
+    df = data
+    if 'year' in df.columns:
+        df = df.drop('year', axis=1)
+    if 'inn' in df.columns:
+        df = df.drop('inn', axis=1)
+
     for col in df:
         result = np.r_[result, contains_chars(df[col].dropna(), chars, normalize=normalize)]
-    result = result.reshape(data.drop('year', axis=1).columns.shape[0], len(chars))
+    result = result.reshape(df.columns.shape[0], len(chars))
     for idx, char in enumerate(chars):
         plt.figure(figsize=figsize)
         ax = sns.barplot(x=df.columns, y=result.T[idx])
