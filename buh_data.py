@@ -54,3 +54,125 @@ def clear_value(value, negative):
     else:
         output = float(value)
     return output
+def zero_to_nan(value):
+    if value == 0 :
+        return None
+    else: 
+        return value
+def balance_fill(balance, fill_zeros=False):
+    """
+    Converts all zeros in balance to NaN
+    Counts totals where there are none
+    If nedeed fills NaNs with zeros   
+    
+    fill_zeros: bool - if True fills NaNs with zeros in rows
+    with at least one value (required to use balance_deviations)
+    """
+    balance_df = balance.applymap(zero_to_nan)
+    if not fill_zeros:
+        print('''Warning: If you want to use balance_deviations function, set fill_zeros to True''')
+    for i in range(1, 6):
+        prefix = f'1{i}'
+        columns = cols[i]
+        non_empty_rows = np.any(~balance_df[columns].isna(), axis=1)
+        balance_df.loc[(balance_df[prefix + '00'].isna()) & (non_empty_rows), prefix + '00'] = \
+                       balance_df[columns].sum(axis=1)
+        if fill_zeros:
+            balance_df.loc[non_empty_rows, columns] = \
+            balance_df.loc[non_empty_rows, columns].fillna(0)        
+    return balance_df
+
+def balance_deviations(balance_df): 
+    """
+    Counts deviations in balance totals
+    """    
+    output = balance_df.eval('''
+    Актив_Пассив = `1600` - `1700`
+    Расчет_1700_итоги = `1700` - `1300` - `1400` - `1500`
+    Расчет_1600_итоги = `1600` - `1100` - `1200`
+    Расчет_1700_статьи = `1700` \
+        - `1310` - `1320` - `1340` - `1350` - `1360` - `1370`\
+        - `1410` - `1420` - `1430` - `1450`\
+        - `1510` - `1520` - `1530` - `1540` - `1550`    
+    Расчет_1600_статьи = `1600`\
+        - `1110` - `1120` - `1130` - `1140` - `1150` - `1160` \
+        - `1170` - `1180` - `1190`\
+        - `1210` - `1220` - `1230` - `1240` - `1250` - `1260`
+    Расчет_1100 = `1100` - `1110` - `1120` - `1130` - `1140` - `1150` - `1160` \
+        - `1170` - `1180` - `1190`
+    Расчет_1200 = `1200` - `1210` - `1220` - `1230` - `1240` - `1250` - `1260`
+    Расчет_1300 = `1300` - `1310` - `1320` - `1340` - `1350` - `1360` - `1370`
+    Расчет_1400 = `1400` - `1410` - `1420` - `1430` - `1450`
+    Расчет_1500 = `1500` - `1510` - `1520` - `1530` - `1540` - `1550`
+    ''').iloc[:, -10:]
+    return output
+def deviation_report(balance_df, tol=0, hist=False):
+    deviations_df = balance_deviations(balance_df)    
+    report = pd.DataFrame(columns=deviations_df.columns)
+    if hist:
+        if report.shape[1] % 3 == 0:          
+            nrows = report.shape[1] / 3
+        else:
+            nrows = (report.shape[1] / 3) + 1
+        plt.figure(figsize=(15,15))
+        for idx, col in enumerate(deviations_df.columns):
+            plt.subplot(int(nrows), 3, idx+1)
+            ax = plt.hist(deviations_df[np.abs(deviations_df[col]) > 0][col])
+            plt.xlabel('Отклонение', fontsize=8)
+            plt.ylabel('Количество', fontsize=8)
+            plt.title(col)
+        plt.subplots_adjust(hspace=0.4, wspace=0.3)
+
+    counts = deviations_df.apply(lambda x : (np.abs(x) > tol).sum().astype('int'))
+    means = deviations_df.apply(lambda x : x[np.abs(x) > tol].mean())
+    medians = deviations_df.apply(lambda x : x[np.abs(x) > tol].median())
+    maxs = deviations_df.max() 
+    mins = deviations_df.min()
+    report = pd.DataFrame(np.vstack([counts, means, medians, mins, maxs]),\
+                          index=['counts > tol', 'mean > tol', 'median > tol', 'min', 'max'],\
+                          columns=deviations_df.columns)
+    return report
+def choose_random(df, choose_from=None):
+    if type(choose_from) != 'NoneType':        
+        random_index = np.random.choice(choose_from)
+    else:
+        random_index = np.random.choice(df.index)
+    return df.loc[random_index, :].T, random_index
+
+def plot_hist(df, with_zeros=False, figsize=(12,8), log=False, outliers=0):
+    """
+    with_zeros: bool - if False, drops zeros as well as NaN values
+    kog: bool - applies np.log1p to POSITIVE values
+    outliers: int - number of standard deviations to use while trimming outliers
+    """
+    if df.shape[1] % 4 == 0:          
+        nrows = df.shape[1] / 4
+    else:
+        nrows = (df.shape[1] / 4) + 1
+    plt.figure(figsize=figsize)
+    for idx, col in enumerate(df.columns):
+        plt.subplot(int(nrows), 4, idx+1)        
+        data = df[col]
+        num = round(100 * data.notna().mean(), 2)
+        data = data.dropna()
+
+        if not with_zeros:
+            data = data[data != 0]
+        if outliers:
+            data = data[trim(data, outliers)]
+        if log:
+            if data.min() < 0:
+                positive_rate = round(100 * (data >= 0).mean(), 3)
+                neg_data = np.log1p(np.abs(data[data < 0]))                 
+                print(f'Making separate hists for positive {positive_rate}%  and negative {round(100-positive_rate, 3)}% values in {col}')
+                plt.hist(neg_data, zorder=2, density=False, rwidth=0.9, color='r', alpha=1)
+#                 plt.legend()
+                data = np.log1p((data[data >= 0]) )
+            else:
+                data = np.log1p(data)            
+        ax = plt.hist(data, zorder=2, density=False, rwidth=0.9, color='g', alpha=0.7)
+        plt.title(f'Непустых значений: {num}%')
+        plt.xlabel(col)
+        plt.grid(True, zorder=0)
+        
+    plt.subplots_adjust(hspace=0.4, wspace=0.3)
