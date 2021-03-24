@@ -1,7 +1,9 @@
 import numpy as np
+import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from custom_modules.plotting import annotate_bars
+from custom_modules.general import trim
 
 def plot_chars(data, chars, normalize=True, figsize=(20, 6), precision=3):
     result = np.array([])
@@ -12,7 +14,7 @@ def plot_chars(data, chars, normalize=True, figsize=(20, 6), precision=3):
         df = df.drop('inn', axis=1)
 
     for col in df:
-        result = np.r_[result, contains_chars(df[col].dropna(), chars, normalize=normalize)]
+        result = np.r_[result, contains_chars(df[col].dropna(), chars, normalize=normalize, precision=precision)]
     result = result.reshape(df.columns.shape[0], len(chars))
     for idx, char in enumerate(chars):
         plt.figure(figsize=figsize)
@@ -23,20 +25,42 @@ def plot_chars(data, chars, normalize=True, figsize=(20, 6), precision=3):
         plt.xticks(rotation=0)
     
 
-def contains_chars(data, chars, normalize=False):
+def contains_chars(data, chars, normalize=False, precision=3):
     result = []
     length = data.shape[0]
     for char in chars:
         try:
             if normalize:
                 result.append(round(data.str.contains(char)\
-                              .value_counts()[True] / length, 3))
+                              .value_counts()[True] / length, precision))
             else: 
-                result.append(data.str.contains(char)\
-                              .value_counts()[True])
+                result.append(int(data.str.contains(char)\
+                              .value_counts()[True]))
         except KeyError:
             result.append(0)        
     return result
+
+def clear_df_test(df, cols_to_add, cols_to_sub):
+    new_df = df.copy()
+    new_df[cols_to_add] = new_df[cols_to_add].applymap(\
+                                lambda x :  clear_value_test(x, True), na_action='ignore')
+    new_df[cols_to_sub] = new_df[cols_to_sub].applymap(\
+                                lambda x :  clear_value_test(x, False), na_action='ignore')
+
+    return new_df
+def clear_value_test(value, add):
+    if value.find('(') != -1:
+        if add:
+            output = - float(value.strip('()'))
+        if not add:
+            output = float(value.strip('()'))
+    else:
+        if add:
+            output = float(value)
+        if not add:
+            output = - float(value)
+    return output
+
 def clear_df(df, cols_w_neg_values, cols_wo_neg_values):
     new_df = df.copy()
     new_df[cols_w_neg_values] = new_df[cols_w_neg_values].applymap(\
@@ -106,8 +130,7 @@ def balance_deviations(balance_df):
     Расчет_1500 = `1500` - `1510` - `1520` - `1530` - `1540` - `1550`
     ''').iloc[:, -10:]
     return output
-def deviation_report(balance_df, tol=0, hist=False):
-    deviations_df = balance_deviations(balance_df)    
+def deviation_report(deviations_df, tol=0, hist=False):   
     report = pd.DataFrame(columns=deviations_df.columns)
     if hist:
         if report.shape[1] % 3 == 0:          
