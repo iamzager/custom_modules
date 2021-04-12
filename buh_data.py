@@ -162,19 +162,19 @@ def choose_random(df, choose_from=None):
         random_index = np.random.choice(df.index)
     return df.loc[random_index, :].T, random_index
 
-def plot_hist(df, with_zeros=False, figsize=(12,8), log=False, outliers=0):
+def plot_hist(df, with_zeros=False, figsize=(12,8), log=False, outliers=0, ncols=3):
     """
     with_zeros: bool - if False, drops zeros as well as NaN values
     kog: bool - applies np.log1p to POSITIVE values
     outliers: int - number of standard deviations to use while trimming outliers
     """
-    if df.shape[1] % 4 == 0:          
-        nrows = df.shape[1] / 4
+    if df.shape[1] % ncols == 0:          
+        nrows = df.shape[1] / ncols
     else:
-        nrows = (df.shape[1] / 4) + 1
+        nrows = (df.shape[1] / ncols) + 1
     plt.figure(figsize=figsize)
     for idx, col in enumerate(df.columns):
-        plt.subplot(int(nrows), 4, idx+1)        
+        plt.subplot(int(nrows), ncols, idx+1)        
         data = df[col]
         num = round(100 * data.notna().mean(), 2)
         data = data.dropna()
