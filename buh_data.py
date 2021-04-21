@@ -201,9 +201,6 @@ def plot_hist(df, with_zeros=False, figsize=(12,8), log=False, outliers=0, ncols
     plt.subplots_adjust(hspace=0.4, wspace=0.3)
     
 def fin_deviations(fin_df): 
-"""
-Counts deviations in fin totals
-"""    
     output = fin_df.eval('''
     Валовая = `2100` - `2110` + `2120`
     Продажи = `2200` - `2100` + `2210` + `2220`
