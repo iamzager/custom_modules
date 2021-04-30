@@ -213,6 +213,7 @@ def plot_coeff(series, log, fig, pos, my_value, coeff_name):
     """
     pos: tuple (nrows, ncols, id)
     """
+    color = sns.color_palette()
     subplot = fig.add_subplot(*pos)    
     if log:
         positive = series[series >= 0]
