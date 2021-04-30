@@ -209,3 +209,30 @@ def fin_deviations(fin_df):
     Совокупный = `2500` - `2400` - `2510` - `2520`    
     ''').iloc[:, -5:]
     return output
+def plot_coeff(series, log, fig, pos, my_value, coeff_name):
+    """
+    pos: tuple (nrows, ncols, id)
+    """
+    subplot = fig.add_subplot(*pos)    
+    if log:
+        positive = series[series >= 0]
+        negative = series[series < 0]
+        coeff_name = coeff_name + ' (логарифм)'
+        positive = np.log1p(positive)
+        negative = - np.log1p( - negative)
+        if my_value and (my_value < 0):
+            my_value = - np.log1p(- my_value)
+        elif my_value: 
+            my_value = np.log1p(my_value)
+        subplot.hist(positive, alpha=0.9, color=color[4])
+        subplot.hist(negative, alpha=0.9, color=(1., 0.31372549, 0.31372549))
+    else:
+        subplot.hist(series, alpha=0.9, color=color[4])
+    top = subplot.get_ylim()[1]
+    if my_value:
+        subplot.vlines(my_value, 0, top, \
+                       color='r', label='ГЛОБАЛ\nВЕБ ГРУПП', linestyles='dashed')
+        subplot.set_ylim(0, top)
+    subplot.legend()
+    subplot.set_xlabel(coeff_name)
+    plt.subplots_adjust(wspace=0.3, hspace=0.3);
